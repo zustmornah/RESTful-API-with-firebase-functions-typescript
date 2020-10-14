@@ -18,6 +18,14 @@ git clone git@github.com:zustmornah/rest-api-firebase-nodeJS-auth_middleware.git
 
 You need to change the firebase project name in *.firebaserc* file.
 
+```
+{
+  "projects": {
+    "default": "YOUR-FIREBASE-PROJECT-ID"
+  }
+}
+```
+
 
 ## Updating firebase permissions.json
 
@@ -25,9 +33,16 @@ You need to update your firebase project permissions in *functions/src/auth/perm
 
 ```
 {
-  "projects": {
-    "default": "YOUR-FIREBASE-PROJECT-ID"
-  }
+  "type": "service_account",
+  "project_id": "YOUR-FIREBASE-PROJECT-ID",
+  "private_key_id": "PROJECT-PRIVATE-KEY_ID",
+  "private_key": "PROJECT-PRIVATE-KEY",
+  "client_email": "PROJECT-EMAIL",
+  "client_id": "CLIENT_ID",
+  "auth_uri": "AUTH-URL",
+  "token_uri": "AUTH_TOKEN-URL",
+  "auth_provider_x509_cert_url": "AUTH_PROVIDER-URL",
+  "client_x509_cert_url": "CLIENT-AUTH_CERT-URL"
 }
 ```
 
