@@ -1,4 +1,4 @@
-# Firebase-nodeJS-auth_middleware
+# Firebase NodeJS RESTful app with Auth middleware
 
 # Building RESTful Web APIs with Cloud Functions, Firestore, Express and TypeScript
 
@@ -16,7 +16,7 @@ git clone git@github.com:zustmornah/rest-api-firebase-nodeJS-auth_middleware.git
 
 ## Updating firebase project id
 
-You need to change the firebase project name in *.firebaserc* file.
+You need to change the firebase project name in _.firebaserc_ file.
 
 ```
 {
@@ -26,10 +26,9 @@ You need to change the firebase project name in *.firebaserc* file.
 }
 ```
 
+## Updating firebase config.json
 
-## Updating firebase permissions.json
-
-You need to update your firebase project permissions in *functions/src/auth/permissions.json* to match the permissions generated for your project.
+You need to update your project config json in _functions/src/certificates/config.json_ to match the firebase permission json generated for your project.
 
 ```
 {
@@ -46,12 +45,11 @@ You need to update your firebase project permissions in *functions/src/auth/perm
 }
 ```
 
-After that, you can log in to firebase in your terminal 
+After that, you can log in to firebase in your terminal
 
 ```
 firebase login
 ```
-
 
 ## Deploy to firebase
 
@@ -63,28 +61,31 @@ firebase deploy
 
 ## Read values from the request
 
-Content Type\n	
-Request Body\n	
+Content Type\n
+Request Body\n
 Behavior\n
 
 ```
-application/json	
-'{"name":"John"}'	
+application/json
+'{"name":"John"}'
 request.body.name equals 'John'
 ```
+
 ```
-application/octet-stream	
-'my text'	
+application/octet-stream
+'my text'
 request.body equals '6d792074657874' (the raw bytes of the request; see the Node.js Buffer documentation)
 ```
+
 ```
-text/plain	
-'my text'	
+text/plain
+'my text'
 request.body equals 'my text'
 ```
+
 ```
-application/x-www-form-urlencoded	
-'name=John'	
+application/x-www-form-urlencoded
+'name=John'
 request.body.name equals 'John'
 ```
 
@@ -135,6 +136,17 @@ PUT /:id
 
 ```
 app.put('/:id', (req, res) => {
+    let id = req.params.id;
+    let body = req.body;
+    let response = Endpoints.update(id, body);
+    res.send(response);
+});
+```
+
+PATCH /:id
+
+```
+app.patch('/:id', (req, res) => {
     let id = req.params.id;
     let body = req.body;
     let response = Endpoints.update(id, body);

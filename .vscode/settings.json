@@ -1,0 +1,78 @@
+{
+    "editor.fontFamily": "Operator Mono Lig",
+    "editor.fontLigatures": true,
+    "editor.fontWeight": "100",
+    "editor.lineHeight": 24,
+    "explorer.decorations.badges": true,
+    "files.autoSave": "onWindowChange",
+    "code-runner.runInTerminal": true,
+    "terminal.integrated.rendererType": "dom",
+    "[php]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true
+    },
+    "prettier.arrowParens": "always",
+    "prettier.bracketSpacing": true,
+    "prettier.htmlWhitespaceSensitivity": "css",
+    "prettier.insertPragma": false,
+    "prettier.jsxBracketSameLine": false,
+    "prettier.jsxSingleQuote": false,
+    "prettier.printWidth": 150,
+    "prettier.proseWrap": "preserve",
+    "prettier.quoteProps": "preserve",
+    "prettier.requirePragma": false,
+    "prettier.semi": true,
+    "prettier.singleQuote": false,
+    "prettier.tabWidth": 4,
+    "prettier.trailingComma": "es5",
+    "prettier.useTabs": false,
+    "prettier.vueIndentScriptAndStyle": false,
+    "team.showWelcomeMessage": false,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "[typescript]": {
+        "editor.formatOnType": true,
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "gitlens.statusBar.dateFormat": "",
+    "[javascript]": {
+        "editor.formatOnType": true,
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "[javascriptreact]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true
+    },
+    "editor.formatOnSave": true,
+    "editor.suggestSelection": "first",
+    "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+    "workbench.iconTheme": "material-icon-theme",
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.foldingStrategy": "indentation",
+    "editor.formatOnPaste": true,
+    "workbench.editor.highlightModifiedTabs": false,
+    "editor.cursorBlinking": "phase",
+    "files.trimFinalNewlines": true,
+    "html.format.wrapLineLength": 0,
+    "[css]": {
+        "editor.defaultFormatter": "HookyQR.beautify"
+    },
+    "git.autofetch": true,
+    "diffEditor.maxComputationTime": 0,
+    "editor.linkedEditing": true,
+    "html.autoClosingTags": true,
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "redhat.telemetry.enabled": false,
+    "security.workspace.trust.untrustedFiles": "open",
+    "editor.formatOnType": true,
+    "launch": {
+        "configurations": [],
+        "compounds": []
+    },
+    "react-native.packager.port": 19000
+}
