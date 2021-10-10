@@ -74,5 +74,8 @@
         "configurations": [],
         "compounds": []
     },
-    "react-native.packager.port": 19000
+    "react-native.packager.port": 19000,
+    "cSpell.words": [
+        "firebaserc"
+    ]
 }

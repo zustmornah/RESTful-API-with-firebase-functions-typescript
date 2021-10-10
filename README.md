@@ -1,6 +1,6 @@
 # Firebase NodeJS RESTful app with Auth middleware
 
-# Building RESTful Web APIs with Cloud Functions, Firestore, Express and TypeScript
+# Building RESTful HTTP APIs with Cloud Functions, Firestore, Express and TypeScript
 
 You will need a Firebase project and firebase tools cli
 
