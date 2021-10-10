@@ -1,17 +1,44 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import * as express from 'express';
 import * as cors from 'cors';
-import * as bodyParser from 'body-parser';
-import { routesConfig } from './users/routes-config';
 
+import express = require('express');
+import { RequestHandler } from 'express';
 
-admin.initializeApp(functions.config().firebase);
+import * as serviceAccount from './certificates/config.json';
+const ServiceAccountPARAMS = {
+
+    type: serviceAccount.type,
+    projectId: serviceAccount.project_id,
+    privateKeyId: serviceAccount.private_key_id,
+    privateKey: serviceAccount.private_key,
+    clientEmail: serviceAccount.client_email,
+    clientId: serviceAccount.client_id,
+    authUri: serviceAccount.auth_uri,
+    tokenUri: serviceAccount.token_uri,
+    authProviderX509CertUrl: serviceAccount.auth_provider_x509_cert_url,
+    clientC509CertUrl: serviceAccount.client_x509_cert_url
+
+}
+
+admin.initializeApp({
+
+    credential: admin.credential.cert(ServiceAccountPARAMS),
+    databaseURL: "DATABASE_URL"
+
+});
+
+import { authRoutes } from './routes/auth.routes';
+import { userRoutes } from './routes/user.routes';
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json() as RequestHandler);
+app.use(express.urlencoded({
+    extended: true
+}) as RequestHandler);
 app.use(cors({ origin: true }));
 
-routesConfig(app);
+userRoutes(app);
+authRoutes(app);
 
 export const api = functions.https.onRequest(app);

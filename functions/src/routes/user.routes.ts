@@ -1,52 +1,81 @@
 import { Application } from "express";
-import { create, all, get, patch, remove, patch_userpass, patch_userRole } from "./controller";
-import { isAuthenticated } from "../auth/authenticated";
-import { isAuthorized } from "../auth/authorized";
+import {
+    createUser,
+    getUsers,
+    getUser,
+    patchUser,
+    patchUserPassword,
+    patchUserRole,
+    removeUser
+} from "../controllers/user.controller";
+
+import { isAuthenticated } from "../services/authenticated";
+import { isAuthorized } from "../services/authorized";
 
 
-export function routesConfig(app: Application) {
+export function userRoutes(app: Application) {
 
-    //create user
+    /** 
+    * Create user 
+    **/
     app.post('/create_user',
         isAuthenticated,
         isAuthorized({ hasRole: ['admin', 'manager'] }),
-        create
+        createUser
     );
-    // get all users
+
+    /**
+    * Get all users
+    **/
     app.get('/users', [
         isAuthenticated,
         isAuthorized({ hasRole: ['admin', 'manager'] }),
-        all
+        getUsers
     ]);
-    // get :id user
+
+    /**
+    * GET user :id user
+    **/
     app.get('/users/:id', [
         isAuthenticated,
         isAuthorized({ hasRole: ['admin', 'manager'], allowSameUser: true }),
-        get
+        getUser
     ]);
-    // updates :id user
+
+    /**
+    * Update user :id user
+    **/
     app.patch('/users/:id', [
         isAuthenticated,
         isAuthorized({ hasRole: ['admin', 'user', 'manager'], allowSameUser: true }),
-        patch
+        patchUser
     ]);
-    // patch user password: user id
+
+    /**
+    * Patch user password :user id
+    **/
     app.patch('/user_pass/:id', [
         isAuthenticated,
         isAuthorized({ hasRole: ['admin', 'user', 'manager'], allowSameUser: true }),
-        patch_userpass
+        patchUserPassword
     ]);
-    //patch user role: user id
+
+    /**
+    * Patch user role :user id
+    **/
     app.patch('/user_role/:id', [
         isAuthenticated,
         isAuthorized({ hasRole: ['admin', 'manager'] }),
-        patch_userRole
+        patchUserRole
     ]);
-    // delete user :id user
+
+    /**
+    * Delete user :user id
+    **/
     app.delete('/users/:id', [
         isAuthenticated,
         isAuthorized({ hasRole: ['admin', 'manager'] }),
-        remove
+        removeUser
     ]);
 
 }
