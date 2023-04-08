@@ -1,154 +1,78 @@
+/* eslint-disable curly */
+/* eslint-disable padded-blocks */
+/* eslint-disable require-jsdoc */
+
 import { Request, Response, NextFunction } from "express";
 import * as admin from "firebase-admin";
 
-function IsValidString(niceString: string): boolean {
-    return typeof niceString === 'string';
-}
+import * as GLOBAL_VARIABLES from "../environments/global_variables.config";
+import * as VALIDATION_INTERCEPTOR from "../middleware/validators/ingress.validators";
 
-/* function IsValidNumber(jumpyNumber: number): boolean {
-    return typeof jumpyNumber === 'number';
-}
-
-function IsValidBoolean(bipolarGuy: boolean): boolean {
-    return typeof bipolarGuy === 'boolean';
-} */
-
-const emailReg = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-const passwordReg = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
-const phoneReg = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im;
-
-function mapUser(user: admin.auth.UserRecord) {
-
-    const customClaims = (user.customClaims || { role: "" }) as {
-        role?: string;
-    };
-    const role = customClaims.role ? customClaims.role : "";
-
-    return {
-        uid: user.uid,
-        email: user.email || "",
-        displayName: user.displayName || "",
-        role,
-        phone: user.phoneNumber,
-        lastSignInTime: user.metadata.lastSignInTime,
-        creationTime: user.metadata.creationTime,
-        photoURL: user.photoURL
-    };
-
-}
+import {
+    getUserModel,
+    getUsersModel,
+    mapUser,
+    updateUserPhoneModel,
+    userCreationWithEmailModel,
+} from "../middleware/interfaces/user.interfaces";
+import {
+    getUserSchema,
+    getUsersSchema,
+    updateUserPhoneSchema,
+    userCreationWithEmailSchema,
+} from "../middleware/schema/user.schema";
+import { requestValidator } from "../middleware/validators/request.validator";
+import {
+    userAuthPasswordModel,
+    userAuthRoleModel,
+    userAuthUserModel,
+} from "../middleware/interfaces/auth.interface";
+import {
+    userAuthPasswordSchema,
+    userAuthRoleSchema,
+    userAuthUserSchema,
+} from "../middleware/schema/auth.schema";
 
 export async function createUser(req: Request, res: Response, next: NextFunction) {
 
     try {
 
-        const { displayName, password, email, role, phone } = req.body;
-        let validated: boolean = true;
+        const createUserPayload: userCreationWithEmailModel = {
+            displayName: req.body.displayName,
+            password: req.body.password,
+            role: req.body.role,
+            email: req.body.email,
+            phone: req.body.phone,
+        };
 
-        if (!displayName) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing displayName"
-            });
-        }
+        return await requestValidator(createUserPayload, userCreationWithEmailSchema, res, next).then(async () => {
 
-        if (!IsValidString(displayName)) {
-            validated = false;
-            return res.status(400).send({
-                message: "invalid displayName field, displayName must be a string"
-            });
-        }
-
-        if (!password) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing password"
-            });
-        }
-
-        if (!passwordReg.test(password)) {
-            validated = false;
-            res.status(400).send({
-                message: "password should contains at least one upper case letter, one lower case letter, one digit, a symbol and 8 characters"
-            });
-        }
-
-        if (!email) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing email"
-            });
-        }
-
-        if (!emailReg.test(email)) {
-            validated = false;
-            res.status(400).send({
-                message: "invalid email"
-            });
-        }
-
-        if (!role) {
-            return res.status(400).send({
-                message: "missing role"
-            });
-        }
-
-        if (!IsValidString(role)) {
-            validated = false;
-            return res.status(400).send({
-                message: "invalid role field, role must be a string"
-            });
-        }
-
-        if (!phone) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing phone"
-            });
-        }
-
-        if (!phoneReg.test(phone)) {
-            validated = false;
-            res.status(400).send({
-                message: "invalid phone number"
-            });
-        }
-
-        if (validated) {
+            if (res.headersSent) return;
 
             await admin.auth().createUser({
-                displayName: displayName,
-                password: password,
-                email: email,
-                phoneNumber: phone
+                displayName: createUserPayload.displayName,
+                password: createUserPayload.password,
+                email: createUserPayload.email,
+                phoneNumber: createUserPayload.phone,
             }).then(async (userRecord) => {
 
                 await admin.auth().setCustomUserClaims(userRecord.uid, {
-                    role: role
+                    role: createUserPayload.role,
                 }).then(() => {
 
                     return res.status(201).send({
-                        user_id: userRecord.uid
+                        user_id: userRecord.uid,
                     });
 
                 }).catch((error) => {
-                    return res.status(400).send({
-                        message: error
-                    });
+                    return res.status(400).send(error);
                 });
 
             }).catch((error) => {
-                return res.status(400).send({
-                    message: error
-                });
+                return res.status(400).send(error);
             });
 
-        } else {
-            return res.status(400).send({
-                message: 'there are validation errors, check request payload'
-            });
-        }
-
-        return;
+        });
 
     } catch (err) {
         return handleError(res, err);
@@ -156,24 +80,30 @@ export async function createUser(req: Request, res: Response, next: NextFunction
 
 }
 
-export async function getUsers(req: Request, res: Response, next: NextFunction) {
+export async function getAllUsers(req: Request, res: Response, next: NextFunction) {
 
     try {
 
-        await admin.auth().listUsers().then((listUsers) => {
+        const usersDataDocumentArray: unknown[] = [];
 
-            const users = listUsers.users.map(mapUser);
-            return res.status(200).send({
-                users
-            });
+        const getUsersParams: getUsersModel = {
+            startNumber: Number(req.query.startNumber),
+            pageSize: Number(req.query.pageSize),
+        };
 
-        }).catch((error) => {
-            return res.status(400).send({
-                message: error
+        return await requestValidator(getUsersParams, getUsersSchema, res, next).then(async () => {
+
+            if (res.headersSent) return;
+
+            await returnAllUsers(usersDataDocumentArray, res, getUsersParams.startNumber || 0, getUsersParams.pageSize || 10).then((result) => {
+                return res.status(200).send({
+                    data: result.usersDataDocumentArray,
+                    max_count: result.maxCount,
+                });
+            }).catch((error) => {
+                return res.status(400).send(error);
             });
         });
-
-        return;
 
     } catch (err) {
         return handleError(res, err);
@@ -185,37 +115,16 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
 
     try {
 
-        const { id } = req.params;
-        let validated: boolean = true;
+        const getUserInput: getUserModel = {
+            id: req.params.id,
+        };
 
-        if (!id) {
-            validated = false;
-            return res.status(400).send({
-                message: "no user ID in url param"
-            });
-        }
+        return await requestValidator(getUserInput, getUserSchema, res, next).then(async () => {
 
-        if (validated) {
+            if (res.headersSent) return;
+            await userExtractor("users", getUserInput.id, res);
 
-            await admin.auth().getUser(id).then((userRecord) => {
-
-                return res.status(200).send({
-                    user: mapUser(userRecord)
-                });
-
-            }).catch((error) => {
-                return res.status(400).send({
-                    message: error
-                });
-            });
-
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
-            });
-        }
-
-        return;
+        });
 
     } catch (err) {
         return handleError(res, err);
@@ -223,114 +132,58 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
 
 }
 
-export async function patchUser(req: Request, res: Response, next: NextFunction) {
+export async function updateUserPhoneNumber(req: Request, res: Response, next: NextFunction) {
 
     try {
 
-        const { id } = req.params;
-        const { displayName, phone, email, photoURL } = req.body;
-        let validated: boolean = true;
+        const getUserInput: updateUserPhoneModel = {
+            id: req.params.id,
+            phone: req.body.phone,
+        };
 
-        if (!id) {
-            validated = false;
-            return res.status(400).send({
-                message: "no user ID in url param"
+        return await requestValidator(getUserInput, updateUserPhoneSchema, res, next).then(async () => {
+
+            if (res.headersSent) return;
+
+            if (!VALIDATION_INTERCEPTOR.newPhoneReg.test(getUserInput.phone)) return res.status(400).send({
+                message: "invalid phone",
             });
-        }
 
-        if (!displayName) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing displayName"
-            });
-        }
+            return await GLOBAL_VARIABLES.setMana.collection("users").where("ID", "==", getUserInput.id).limit(1).get().then(async (queryUserSnapshot) => {
 
-        if (!IsValidString(displayName)) {
-            validated = false;
-            return res.status(400).send({
-                message: "invalid displayName field, displayName must be a string"
-            });
-        }
+                if (queryUserSnapshot.empty) return res.status(404).send({
+                    message: "no user found for id provided",
+                });
 
-        if (!phone) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing phone field"
-            });
-        }
+                const userDocID = queryUserSnapshot.docs[0].id;
 
-        if (!phoneReg.test(phone)) {
-            validated = false;
-            res.status(400).send({
-                message: "invalid phone number"
-            });
-        }
+                return await admin.auth().updateUser(getUserInput.id, {
+                    phoneNumber: getUserInput.phone,
+                }).then(async (userRecord) => {
 
-        if (!email) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing email"
-            });
-        }
+                    await GLOBAL_VARIABLES.setMana.collection("users").doc(userDocID).update({
+                        phone: getUserInput.phone,
+                    }).then(() => {
 
-        if (!emailReg.test(email)) {
-            validated = false;
-            res.status(400).send({
-                message: "invalid email"
-            });
-        }
+                        return res.status(200).send({
+                            message: "user phone number updated successfully",
+                            user_data: userRecord,
+                        });
 
-        if (!photoURL) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing photoURL"
-            });
-        }
-
-        if (!IsValidString(photoURL)) {
-            validated = false;
-            return res.status(400).send({
-                message: "invalid photoURL field, photoURL must be a string"
-            });
-        }
-
-        if (validated) {
-
-            await admin.auth().updateUser(id, {
-
-                displayName: displayName,
-                phoneNumber: phone,
-                email: email,
-                photoURL: photoURL
-
-            }).then(async () => {
-
-                await admin.auth().getUser(id).then((userRecord) => {
-
-                    return res.status(200).send({
-                        message: "user updated",
-                        user: mapUser(userRecord)
+                    }).catch((error) => {
+                        return res.status(400).send(error);
                     });
 
                 }).catch((error) => {
-                    return res.status(400).send({
-                        message: error
-                    });
+                    return res.status(400).send(error);
                 });
+
 
             }).catch((error) => {
-                return res.status(400).send({
-                    message: error
-                });
+                return res.status(400).send(error);
             });
 
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
-            });
-        }
-
-        return;
+        });
 
     } catch (err) {
         return handleError(res, err);
@@ -342,63 +195,43 @@ export async function patchUserPassword(req: Request, res: Response, next: NextF
 
     try {
 
-        const { id } = req.params;
-        const { password } = req.body;
-        let validated: boolean = true;
+        const patchUserPasswordPayload: userAuthPasswordModel = ({
+            id: req.params.id,
+            password: req.body.password,
+        });
 
-        if (!id) {
-            validated = false;
-            return res.status(400).send({
-                message: "no user ID in url param"
+        return await requestValidator(patchUserPasswordPayload, userAuthPasswordSchema, res, next).then(async () => {
+
+            if (res.headersSent) return;
+
+            if (!VALIDATION_INTERCEPTOR.passwordReg.test(patchUserPasswordPayload.password)) return res.status(400).send({
+                message: "invalid password: put password validity pattern here",
             });
-        }
 
-        if (!password) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing password"
-            });
-        }
-
-        if (!passwordReg.test(password)) {
-            validated = false;
-            res.status(400).send({
-                message: "password should contains at least one upper case letter, one lower case letter, one digit, a symbol and 8 characters"
-            });
-        }
-
-        if (validated) {
-
-            await admin.auth().updateUser(id, {
-                password: password
+            return await admin.auth().updateUser(patchUserPasswordPayload.id, {
+                password: patchUserPasswordPayload.password,
             }).then(async () => {
 
-                await admin.auth().getUser(id).then((userRecord) => {
+                await admin.auth().getUser(patchUserPasswordPayload.id).then((userRecord) => {
 
                     return res.status(200).send({
-                        message: "Update Successful",
-                        user: mapUser(userRecord)
+                        message: "Update successful",
+                        user: mapUser(userRecord),
                     });
 
                 }).catch((error) => {
                     return res.status(400).send({
-                        message: error
+                        message: error,
                     });
                 });
 
             }).catch((error) => {
                 return res.status(400).send({
-                    message: error
+                    message: error,
                 });
             });
 
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
-            });
-        }
-
-        return;
+        });
 
     } catch (err) {
         return handleError(res, err);
@@ -410,59 +243,35 @@ export async function patchUserRole(req: Request, res: Response, next: NextFunct
 
     try {
 
-        const { id } = req.params;
-        const { role } = req.body;
-        let validated: boolean = true;
+        const patchUserPasswordPayload: userAuthRoleModel = {
+            id: req.params.id,
+            role: req.body.role,
+        };
 
-        if (!id) {
-            validated = false;
-            return res.status(400).send({
-                message: "no user ID in url param"
-            });
-        }
+        return await requestValidator(patchUserPasswordPayload, userAuthRoleSchema, res, next).then(async () => {
 
-        if (!role) {
-            validated = false;
-            return res.status(400).send({
-                message: "no user role specified in request body"
-            });
-        }
+            if (res.headersSent) return;
 
-        if (!IsValidString(role)) {
-            validated = false;
-            return res.status(400).send({
-                message: "invalid role field, role must be a string"
-            });
-        }
-
-        if (validated) {
-
-            await admin.auth().setCustomUserClaims(id, {
-                role: role
+            await admin.auth().setCustomUserClaims(patchUserPasswordPayload.id, {
+                role: patchUserPasswordPayload.role,
             }).then(async () => {
 
-                await admin.auth().getUser(id).then((userRecord) => {
+                await admin.auth().getUser(patchUserPasswordPayload.id).then((userRecord) => {
 
                     return res.status(200).send({
                         message: "update successful",
-                        user: mapUser(userRecord)
+                        user: mapUser(userRecord),
                     });
 
                 });
 
             }).catch((error) => {
                 return res.status(400).send({
-                    message: error
+                    message: error,
                 });
             });
 
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
-            });
-        }
-
-        return;
+        });
 
     } catch (err) {
         return handleError(res, err);
@@ -474,37 +283,27 @@ export async function removeUser(req: Request, res: Response, next: NextFunction
 
     try {
 
-        const { id } = req.params;
-        let validated: boolean = true;
+        const removeUserPayload: userAuthUserModel = {
+            id: req.params.id,
+        };
 
-        if (!id) {
-            validated = false;
-            return res.status(400).send({
-                message: "no user ID in url param"
-            });
-        }
+        return await requestValidator(removeUserPayload, userAuthUserSchema, res, next).then(async () => {
 
-        if (validated) {
+            if (res.headersSent) return;
 
-            await admin.auth().deleteUser(id).then(() => {
+            await admin.auth().deleteUser(removeUserPayload.id).then(() => {
 
                 return res.status(200).send({
-                    message: `user with ID: ${id} removed`
+                    message: `user with ID: ${removeUserPayload.id} removed`,
                 });
 
             }).catch((error) => {
                 return res.status(400).send({
-                    message: error
+                    message: error,
                 });
             });
 
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
-            });
-        }
-
-        return;
+        });
 
     } catch (err) {
         return handleError(res, err);
@@ -512,6 +311,81 @@ export async function removeUser(req: Request, res: Response, next: NextFunction
 
 }
 
+async function userExtractor(useCollectionName: string, userID: string, res: Response) {
+
+    await admin.auth().getUser(userID).then(async (userRecord) => {
+
+        await GLOBAL_VARIABLES.setMana.collection(useCollectionName).where("ID", "==", userRecord.uid).get().then(async (querySnapshot) => {
+
+            if (querySnapshot.empty) return res.status(400).send({
+                message: "no user found",
+            });
+
+            const useDocumentID = querySnapshot.docs[0].id;
+            return await GLOBAL_VARIABLES.setMana.collection(useCollectionName).doc(useDocumentID).get().then((userDocument) => {
+
+                return res.status(200).send({
+                    user_data: {
+                        auth: mapUser(userRecord),
+                        document: userDocument.data(),
+                    },
+                });
+
+            }).catch((error) => {
+                return res.status(400).send(error);
+            });
+
+        }).catch((error) => {
+            return res.status(400).send(error);
+        });
+
+    }).catch((error) => {
+        return res.status(400).send(error);
+    });
+
+}
+
+async function returnAllUsers(usersDataDocumentArray: unknown[], res: Response, start: number, pageSize: number) {
+
+    let maxCount = 0;
+    await GLOBAL_VARIABLES.setMana.collection("users").get().then((snapshot: { size: number; }) => {
+        maxCount = snapshot.size;
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await GLOBAL_VARIABLES.setMana.collection("users").orderBy("createdAt").limit(pageSize).offset(start).get().then(async (querySnapshot: { empty: any; docs: any; }) => {
+
+        if (querySnapshot.empty) return res.status(200).send({
+            message: "no admin data found",
+        });
+
+        const docs = querySnapshot.docs;
+        for (const doc of docs) {
+
+            const selectedItem = {
+
+                document_id: doc.id,
+                userID: doc.data().ID,
+                document: doc.data(),
+
+            };
+
+            usersDataDocumentArray.push(selectedItem);
+
+        }
+
+        return usersDataDocumentArray;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }).catch((error: any) => {
+        return res.status(400).send(error);
+    });
+
+    return ({ usersDataDocumentArray, maxCount });
+
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function handleError(res: Response, err: any) {
     return res.status(500).send({ message: `${err.code} - ${err.message}` });
 }

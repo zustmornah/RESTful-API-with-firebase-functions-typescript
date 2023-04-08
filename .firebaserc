@@ -1,5 +1,5 @@
 {
   "projects": {
-    "default": "[project_id_goes_here]"
+    "default": "<PROJECT ID>"
   }
 }

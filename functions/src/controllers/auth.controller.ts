@@ -1,162 +1,80 @@
+/* eslint-disable curly */
+/* eslint-disable padded-blocks */
+/* eslint-disable require-jsdoc */
+
 import { Request, Response, NextFunction } from "express";
 import * as admin from "firebase-admin";
 
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError } from "axios";
 
-import * as keys from '../environments/dev.config.json';
-const keyPairs = {
-    API_KEY: keys.WebAPI_KEY
-}
+import * as ENVIRONMENT_VARIABLES from "../environments/dev.config";
+import * as INGRESS_VALIDATOR from "../middleware/validators/ingress.validators";
 
-function IsValidString(niceString: string): boolean {
-    return typeof niceString === 'string';
-}
+import {
+    customTokenModel,
+    emailPasswordSignInModel,
+    iDTokensModel,
+    reAuthenticationModel,
+} from "../middleware/interfaces/auth.interface";
+import { requestValidator } from "../middleware/validators/request.validator";
+import {
+    customTokenSchema,
+    emailPasswordSignInSchema,
+    iDTokensSchema,
+    reAuthenticationSchema,
+} from "../middleware/schema/auth.schema";
 
-export async function signUserIn(req: Request, res: Response, next: NextFunction) {
-
-    try {
-
-        const { password, email } = req.body;
-        const uri: string = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + keyPairs.API_KEY;
-        let validated: boolean = true;
-
-        if (!password) {
-            return res.status(400).send({
-                message: "missing password field, password field is required"
-            });
-        }
-
-        if (!IsValidString(password)) {
-            validated = false;
-            return res.status(400).send({
-                message: "invalid password field, password must be a string"
-            });
-        }
-
-        if (!email) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing email field, email field is required"
-            });
-        }
-
-        if (validated) {
-
-            await axios.post(uri, {
-
-                email: email,
-                password: password,
-                returnSecureToken: true
-
-            }).then((response) => {
-                return res.status(201).send(response.data);
-            }).catch((error) => {
-
-                return res.status(400).send({
-                    message: error
-                });
-
-            });
-
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
-            });
-        }
-
-    } catch (err) {
-
-        const error = err as AxiosError;
-        res.status(400).send(error);
-
-    }
-
-    return undefined;
-
-}
-
-export async function reAuthenticate(req: Request, res: Response, next: NextFunction) {
+export async function signUserInWithEmailPassword(req: Request, res: Response, next: NextFunction) {
 
     try {
 
-        const { refresh_token } = req.body;
-        const uri: string = 'https://securetoken.googleapis.com/v1/token?key=' + keyPairs.API_KEY;
-        let validated: boolean = true;
+        const uri: string = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + ENVIRONMENT_VARIABLES.API_KEY_VALUE;
+        const emailPasswordSignInPayload: emailPasswordSignInModel = req.body;
 
-        if (!refresh_token) {
-            validated = false;
-            return res.status(400).send({
-                message: "missing refresh_token field"
-            });
-        }
+        return await requestValidator(emailPasswordSignInPayload, emailPasswordSignInSchema, res, next).then(async () => {
 
-        if (validated) {
+            if (res.headersSent) return;
 
-            await axios.post(uri, {
-
-                grant_type: "refresh_token",
-                refresh_token: refresh_token
-
-            }).then((response) => {
-                return res.status(201).send(response.data);
-            }).catch((error) => {
-                return res.status(400).send({ message: error });
+            if (!INGRESS_VALIDATOR.emailReg.test(emailPasswordSignInPayload.email)) return res.status(400).send({
+                message: "invalid email address",
             });
 
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
+            if (!INGRESS_VALIDATOR.passwordReg.test(emailPasswordSignInPayload.password)) return res.status(400).send({
+                message: "invalid password: put password validity pattern here",
             });
-        }
 
-    } catch (err) {
+            return await axios.post(uri, {
 
-        const error = err as AxiosError;
-        res.status(400).send({ message: error });
+                email: emailPasswordSignInPayload.email,
+                password: emailPasswordSignInPayload.password,
+                returnSecureToken: true,
 
-    }
+            }).then(async (signInResponse) => {
 
-    return undefined;
+                const userID: string = signInResponse.data.localId;
+                await admin.auth().getUser(userID).then(async (userRecord) => {
 
-}
+                    return res.status(201).send({
+                        response: signInResponse.data,
+                        user_data: userRecord,
+                    });
 
-export async function GETCustomToken(req: Request, res: Response, next: NextFunction) {
-
-    try {
-
-        const { uid } = req.body;
-        let validated: boolean = true;
-
-        if (!uid) {
-            validated = false;
-            return res.status(400).send({ message: "missing uid" });
-        }
-
-        if (validated) {
-
-            admin.auth().createCustomToken(uid).then((customToken) => {
-
-                return res.status(201).send({
-                    message: customToken
+                }).catch((error) => {
+                    return res.status(400).send(error);
                 });
 
             }).catch((error) => {
                 return res.status(400).send({
-                    message: error
+                    message: error,
                 });
             });
 
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
-            });
-        }
+        });
 
-    } catch (err) {
-        return handleError(res, err);
+    } catch (error) {
+        const err = error as AxiosError;
+        return res.status(400).send(err.response?.data);
     }
-
-    return undefined;
 
 }
 
@@ -164,47 +82,93 @@ export async function GETIdTokens(req: Request, res: Response, next: NextFunctio
 
     try {
 
-        const { token } = req.body;
-        const uri: string = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=' + keyPairs.API_KEY;
-        let validated: boolean = true;
+        const uri: string = ENVIRONMENT_VARIABLES.IDENTITY_TOOLKIT_BASE_URL + ENVIRONMENT_VARIABLES.CUSTOM_TOKEN_KEYHOLDER + ENVIRONMENT_VARIABLES.API_KEY_VALUE;
+        const iDTokensPayload: iDTokensModel = req.body;
 
-        if (!token) {
-            validated = false;
-            return res.status(400).send({ message: "missing token" });
-        }
+        return await requestValidator(iDTokensPayload, iDTokensSchema, res, next).then(async () => {
 
-        if (validated) {
+            if (res.headersSent) return;
 
             await axios.post(uri, {
 
-                token: token,
-                returnSecureToken: true
+                token: iDTokensPayload.token,
+                returnSecureToken: true,
 
             }).then((signInResponse) => {
                 return res.status(201).send(signInResponse.data);
             }).catch((error) => {
-
                 const err = error as AxiosError;
-                return res.status(400).send({
-                    message: err
-                });
-
+                return res.status(400).send(err);
             });
 
-        } else {
-            return res.status(400).send({
-                message: "there were validation error(s), check request payload"
-            });
-        }
+        });
 
     } catch (err) {
         return handleError(res, err);
     }
 
-    return undefined;
+}
+
+export async function reAuthenticate(req: Request, res: Response, next: NextFunction) {
+
+    try {
+
+        const reAuthenticatePayload: reAuthenticationModel = req.body;
+        const uri: string = ENVIRONMENT_VARIABLES.SECURE_API_BASE_URL + ENVIRONMENT_VARIABLES.SECURE_API_KEYHOLDER + ENVIRONMENT_VARIABLES.API_KEY_VALUE;
+
+        return await requestValidator(reAuthenticatePayload, reAuthenticationSchema, res, next).then(async () => {
+
+            if (res.headersSent) return;
+
+            await axios.post(uri, {
+
+                grant_type: "refresh_token",
+                refresh_token: reAuthenticatePayload.refresh_token,
+
+            }).then((reAuthResponse) => {
+                return res.status(201).send(reAuthResponse.data);
+            }).catch((error) => {
+                const err = error as AxiosError;
+                return res.status(400).send(err);
+            });
+
+        });
+
+    } catch (err) {
+        return handleError(res, err);
+    }
 
 }
 
+export async function GETCustomToken(req: Request, res: Response, next: NextFunction) {
+
+    try {
+
+        const customTokenPayload: customTokenModel = req.body;
+
+        return await requestValidator(customTokenPayload, customTokenSchema, res, next).then(async () => {
+
+            if (res.headersSent) return;
+
+            admin.auth().createCustomToken(customTokenPayload.uid).then((customToken) => {
+
+                return res.status(201).send({
+                    custom_token: customToken,
+                });
+
+            }).catch((error) => {
+                return res.status(400).send(error);
+            });
+
+        });
+
+    } catch (err) {
+        return handleError(res, err);
+    }
+
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function handleError(res: Response, err: any) {
     return res.status(500).send({ message: `${err.code} - ${err.message}` });
 }

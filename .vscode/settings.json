@@ -1,37 +1,41 @@
 {
-    "editor.fontFamily": "Operator Mono Lig",
     "editor.fontLigatures": true,
     "editor.fontWeight": "100",
     "editor.lineHeight": 24,
     "explorer.decorations.badges": true,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": true,
+    "editor.guides.highlightActiveIndentation": true,
+    "editor.guides.bracketPairsHorizontal": "active",
+    "editor.linkedEditing": true,
+    "workbench.colorCustomizations": {
+        "[Panda Syntax]": {
+            "editorBracketPairGuide.background1": "#ffb86c85",
+            "editorBracketPairGuide.background2": "#ff75b583",
+            "editorBracketPairGuide.background3": "#45a8f980",
+            "editorBracketPairGuide.background4": "#b184eb85",
+            "editorBracketPairGuide.background5": "#e6e6e688",
+            "editorBracketPairGuide.background6": "#19f9d780",
+            "editorBracketPairGuide.activeBackground1": "#ffb86c85",
+            "editorBracketPairGuide.activeBackground2": "#ff75b583",
+            "editorBracketPairGuide.activeBackground3": "#45a8f980",
+            "editorBracketPairGuide.activeBackground4": "#b184eb85",
+            "editorBracketPairGuide.activeBackground5": "#e6e6e688",
+            "editorBracketPairGuide.activeBackground6": "#19f9d780",
+        }
+    },
+    "workbench.editor.highlightModifiedTabs": true,
     "files.autoSave": "onWindowChange",
     "code-runner.runInTerminal": true,
-    "terminal.integrated.rendererType": "dom",
-    "[php]": {
-        "editor.formatOnSave": true,
-        "editor.formatOnType": true
-    },
-    "prettier.arrowParens": "always",
-    "prettier.bracketSpacing": true,
-    "prettier.htmlWhitespaceSensitivity": "css",
-    "prettier.insertPragma": false,
-    "prettier.jsxBracketSameLine": false,
-    "prettier.jsxSingleQuote": false,
-    "prettier.printWidth": 150,
-    "prettier.proseWrap": "preserve",
-    "prettier.quoteProps": "preserve",
-    "prettier.requirePragma": false,
-    "prettier.semi": true,
-    "prettier.singleQuote": false,
-    "prettier.tabWidth": 4,
-    "prettier.trailingComma": "es5",
-    "prettier.useTabs": false,
-    "prettier.vueIndentScriptAndStyle": false,
-    "team.showWelcomeMessage": false,
     "typescript.updateImportsOnFileMove.enabled": "always",
     "javascript.updateImportsOnFileMove.enabled": "always",
+    "liveServer.settings.donotVerifyTags": true,
+    "liveServer.settings.donotShowInfoMsg": true,
+    "liveshare.presence": true,
+    "diffEditor.renderSideBySide": true,
     "[typescript]": {
         "editor.formatOnType": true,
+        "editor.formatOnSave": true,
         "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "gitlens.statusBar.dateFormat": "",
@@ -44,39 +48,53 @@
         "editor.formatOnSave": true,
         "editor.formatOnType": true
     },
+    "javascript.suggest.autoImports": true,
+    "typescript.suggest.autoImports": true,
     "editor.formatOnSave": true,
     "editor.suggestSelection": "first",
     "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
     "workbench.iconTheme": "material-icon-theme",
     "[html]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+        "editor.defaultFormatter": "vscode.html-language-features"
     },
     "editor.foldingStrategy": "indentation",
     "editor.formatOnPaste": true,
-    "workbench.editor.highlightModifiedTabs": false,
     "editor.cursorBlinking": "phase",
     "files.trimFinalNewlines": true,
     "html.format.wrapLineLength": 0,
     "[css]": {
-        "editor.defaultFormatter": "HookyQR.beautify"
+        "editor.defaultFormatter": "vscode.css-language-features"
     },
     "git.autofetch": true,
     "diffEditor.maxComputationTime": 0,
-    "editor.linkedEditing": true,
     "html.autoClosingTags": true,
+    "javascript.autoClosingTags": true,
+    "typescript.autoClosingTags": true,
+    "[json,jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "editor.formatOnType": true,
+    "terminal.integrated.fontFamily": "CaskaydiaCove NF",
+    "[yaml]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
-    "redhat.telemetry.enabled": false,
-    "security.workspace.trust.untrustedFiles": "open",
-    "editor.formatOnType": true,
-    "launch": {
-        "configurations": [],
-        "compounds": []
+    "editor.inlineSuggest.enabled": true,
+    "files.associations": {
+        "*.json": "jsonc"
     },
-    "react-native.packager.port": 19000,
     "cSpell.words": [
-        "firebaserc",
-        "predeploy"
+        "cloudsdktool",
+        "fileupload",
+        "firebaseio",
+        "gcloud",
+        "gserviceaccount",
+        "htmlextra",
+        "KEYHOLDER",
+        "manabackend",
+        "MORG",
+        "prestart"
     ]
 }

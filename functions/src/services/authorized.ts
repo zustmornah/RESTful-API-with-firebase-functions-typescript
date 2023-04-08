@@ -1,11 +1,14 @@
-import { Request, Response } from "express";
+/* eslint-disable padded-blocks */
+/* eslint-disable require-jsdoc */
 
-export function isAuthorized(opts: { hasRole: Array<'admin' | 'user' | 'manager'>, allowSameUser?: boolean }) {
+import { NextFunction, Request, Response } from "express";
 
-    return (req: Request, res: Response, next: Function) => {
+export function isAuthorized(opts: { hasRole: Array<"admin" | "user" | "manager">, allowSameUser?: boolean }) {
 
-        const { role, uid } = res.locals
-        const { id } = req.params
+    return (req: Request, res: Response, next: NextFunction) => {
+
+        const { role, uid } = res.locals;
+        const { id } = req.params;
 
         if (opts.allowSameUser && id && uid === id) {
             return next();
@@ -13,7 +16,7 @@ export function isAuthorized(opts: { hasRole: Array<'admin' | 'user' | 'manager'
 
         if (!role) {
             return res.status(403).send({
-                message: 'No Role Specified'
+                message: "No Role Specified",
             });
         }
 
@@ -22,9 +25,9 @@ export function isAuthorized(opts: { hasRole: Array<'admin' | 'user' | 'manager'
         }
 
         return res.status(403).send({
-            message: 'Unauthorized'
+            message: "Unauthorized",
         });
 
-    }
+    };
 
 }

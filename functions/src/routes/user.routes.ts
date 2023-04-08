@@ -1,12 +1,15 @@
+/* eslint-disable padded-blocks */
+/* eslint-disable require-jsdoc */
+
 import { Application } from "express";
 import {
     createUser,
-    getUsers,
+    getAllUsers,
     getUser,
-    patchUser,
+    updateUserPhoneNumber,
     patchUserPassword,
     patchUserRole,
-    removeUser
+    removeUser,
 } from "../controllers/user.controller";
 
 import { isAuthenticated } from "../services/authenticated";
@@ -15,67 +18,67 @@ import { isAuthorized } from "../services/authorized";
 
 export function userRoutes(app: Application) {
 
-    /** 
-    * Create user 
+    /**
+    * Create user
     **/
-    app.post('/create_user',
+    app.post("/users/create",
         isAuthenticated,
-        isAuthorized({ hasRole: ['admin', 'manager'] }),
+        isAuthorized({ hasRole: ["admin", "manager"] }),
         createUser
     );
 
     /**
     * Get all users
     **/
-    app.get('/users', [
+    app.get("/users/getAll", [
         isAuthenticated,
-        isAuthorized({ hasRole: ['admin', 'manager'] }),
-        getUsers
+        isAuthorized({ hasRole: ["admin", "manager"] }),
+        getAllUsers,
     ]);
 
     /**
     * GET user :id user
     **/
-    app.get('/users/:id', [
+    app.get("/users/:id", [
         isAuthenticated,
-        isAuthorized({ hasRole: ['admin', 'manager'], allowSameUser: true }),
-        getUser
+        isAuthorized({ hasRole: ["admin", "manager"], allowSameUser: true }),
+        getUser,
     ]);
 
     /**
-    * Update user :id user
+    * Update user phone number :id user
     **/
-    app.patch('/users/:id', [
+    app.patch("/users/updatePhoneNumber/:id", [
         isAuthenticated,
-        isAuthorized({ hasRole: ['admin', 'user', 'manager'], allowSameUser: true }),
-        patchUser
+        isAuthorized({ hasRole: ["admin", "user", "manager"], allowSameUser: true }),
+        updateUserPhoneNumber,
     ]);
 
     /**
     * Patch user password :user id
     **/
-    app.patch('/user_pass/:id', [
+    app.patch("/users/updatePassword/:id", [
         isAuthenticated,
-        isAuthorized({ hasRole: ['admin', 'user', 'manager'], allowSameUser: true }),
-        patchUserPassword
+        isAuthorized({ hasRole: ["admin", "user", "manager"], allowSameUser: true }),
+        patchUserPassword,
     ]);
 
     /**
     * Patch user role :user id
     **/
-    app.patch('/user_role/:id', [
+    app.patch("/users/updateRole/:id", [
         isAuthenticated,
-        isAuthorized({ hasRole: ['admin', 'manager'] }),
-        patchUserRole
+        isAuthorized({ hasRole: ["admin", "manager"] }),
+        patchUserRole,
     ]);
 
     /**
     * Delete user :user id
     **/
-    app.delete('/users/:id', [
+    app.delete("/users/remove/:id", [
         isAuthenticated,
-        isAuthorized({ hasRole: ['admin', 'manager'] }),
-        removeUser
+        isAuthorized({ hasRole: ["admin", "manager"] }),
+        removeUser,
     ]);
 
 }
